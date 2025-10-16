@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LATAM Season Coins RPG</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background: linear-gradient(180deg, #2a1810 0%, #4a2820 100%);
+            color: white;
+            image-rendering: pixelated;
+            overflow: hidden;
+        }
+        
+        #gameContainer {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #battleScreen {
+            width: 90%;
+            max-width: 900px;
+            height: 600px;
+            background: linear-gradient(180deg, #8b6914 0%, #cdaa3d 50%, #8b6914 100%);
+            border: 8px solid #4a3c0a;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            position: relative;
+            display: none;
+        }
+        
+        #startScreen {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 8px solid #ebd671;
+            box-shadow: 0 0 30px rgba(235,214,113,0.5);
+        }
+        
+        h1 {
+            color: #ebd671;
+            font-size: 24px;
+            margin-bottom: 30px;
+            text-shadow: 3px 3px 0px #8b6914;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 3px 3px 0px #8b6914, 0 0 10px #ebd671; }
+            to { text-shadow: 3px 3px 0px #8b6914, 0 0 20px #ebd671, 0 0 30px #ebd671; }
+        }
+        
+        .startBtn {
+            background: linear-gradient(180deg, #ebd671 0%, #8b6914 100%);
+            color: #1a1a2e;
+            border: 4px solid #4a3c0a;
+            padding: 15px 30px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            font-family: 'Press Start 2P', cursive;
+        }
+        
+        .startBtn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(235,214,113,0.5);
+        }
+        
+        .startBtn:active {
+            transform: scale(0.95);
+        }
+        
+        #enemyArea {
+            height: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 70%);
+        }
+        
+        #playerArea {
+            height: 50%;
+            background: rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 20px;
+        }
+        
+        .character {
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, rgba(255,215,0,0.2) 0%, rgba(139,105,20,0.1) 100%);
+            border: 3px solid #8b6914;
+            border-radius: 10px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+        
+        .character-sprite {
+            width: 100px;
+            height: 100px;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
+            transition: transform 0.2s;
+        }
+        
+        .character:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        
+        .character:hover .character-sprite {
+            transform: scale(1.1);
+        }
+        
+        .character.selected {
+            box-shadow: 0 0 20px #00ff00;
+            animation: pulse 0.5s infinite;
+        }
+        
+        .character.dead {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        .character.dead .character-sprite {
+            filter: grayscale(100%) brightness(0.5);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        #enemy {
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle at 30% 30%, #ff6b6b, #dc143c, #8b0000);
+            border: 5px solid #4a0000;
+            border-radius: 20px;
+            position: relative;
+            animation: float 3s ease-in-out infinite;
+            box-shadow: 0 10px 30px rgba(220,20,60,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .enemy-sprite {
+            width: 150px;
+            height: 150px;
+            image-rendering: pixelated;
+            filter: drop-shadow(0 0 10px rgba(255,0,0,0.5));
+        }
+        
+        .hp-bar {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            height: 15px;
+            background: #333;
+            border: 2px solid #fff;
+            border-radius: 3px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+        
+        .hp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #00aa00);
+            transition: width 0.5s;
+        }
+        
+        .hp-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            font-size: 8px;
+            line-height: 15px;
+        }
+        
+        #actionMenu {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1e 100%);
+            border: 4px solid #ebd671;
+            padding: 20px;
+            display: none;
+            min-width: 400px;
+        }
+        
+        .action-btn {
+            background: linear-gradient(180deg, #4a3c0a 0%, #2a1c0a 100%);
+            color: #ebd671;
+            border: 2px solid #ebd671;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-size: 10px;
+            transition: all 0.2s;
+            font-family: 'Press Start 2P', cursive;
+        }
+        
+        .action-btn:hover {
+            background: linear-gradient(180deg, #ebd671 0%, #8b6914 100%);
+            color: #1a1a2e;
+            transform: scale(1.05);
+        }
+        
+        #messageBox {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            border: 3px solid #ebd671;
+            padding: 15px;
+            display: none;
+            min-width: 500px;
+            text-align: center;
+            font-size: 12px;
+        }
+        
+        .damage-text {
+            position: absolute;
+            color: #ff0000;
+            font-size: 20px;
+            font-weight: bold;
+            pointer-events: none;
+            animation: damageFloat 1s ease-out forwards;
+        }
+        
+        @keyframes damageFloat {
+            0% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+        }
+        
+        .heal-text {
+            color: #00ff00 !important;
+        }
+        
+        .shake {
+            animation: shake 0.5s;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        #victoryScreen, #defeatScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 8px solid #ebd671;
+            padding: 40px;
+            text-align: center;
+            display: none;
+            z-index: 1000;
+        }
+        
+        .result-title {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+        
+        .victory-title {
+            color: #00ff00;
+            text-shadow: 3px 3px 0px #008800;
+        }
+        
+        .defeat-title {
+            color: #ff0000;
+            text-shadow: 3px 3px 0px #880000;
+        }
+        
+        #loadingScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 2000;
+        }
+        
+        .loading-text {
+            color: #ebd671;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .loading-bar {
+            width: 300px;
+            height: 20px;
+            background: #333;
+            border: 2px solid #ebd671;
+        }
+        
+        .loading-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ebd671, #8b6914);
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="loadingScreen">
+            <div class="loading-text">Cargando sprites...</div>
+            <div class="loading-bar">
+                <div class="loading-fill" id="loadingBar"></div>
+            </div>
+        </div>
+        
+        <div id="startScreen">
+            <h1>🌮 LATAM SEASON COINS RPG 🌮</h1>
+            <p style="margin-bottom: 20px; color: #cdaa3d;">¡Derrota al Burrito Gigante!</p>
+            <button class="startBtn" onclick="startGame()">¡COMENZAR BATALLA!</button>
+        </div>
+        
+        <div id="battleScreen">
+            <div id="enemyArea">
+                <div id="enemy">
+                    <img src="burrito-boss.png" class="enemy-sprite" alt="Burrito Boss" onerror="this.style.display='none'; this.parentElement.innerHTML += '👹';">
+                    <div class="hp-bar">
+                        <div class="hp-fill" id="enemyHp"></div>
+                        <div class="hp-text" id="enemyHpText">500/500</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="playerArea">
+                <div class="character" id="doggy" onclick="selectCharacter('doggy')">
+                    <img src="doggy.png" class="character-sprite" alt="Doggy">
+                    <div class="hp-bar">
+                        <div class="hp-fill" id="doggyHp"></div>
+                        <div class="hp-text" id="doggyHpText">100/100</div>
+                    </div>
+                </div>
+                
+                <div class="character" id="burrito" onclick="selectCharacter('burrito')">
+                    <img src="burrito.png" class="character-sprite" alt="Burrito">
+                    <div class="hp-bar">
+                        <div class="hp-fill" id="burritoHp"></div>
+                        <div class="hp-text" id="burritoHpText">150/150</div>
+                    </div>
+                </div>
+                
+                <div class="character" id="darrkito" onclick="selectCharacter('darrkito')">
+                    <img src="darrkito.png" class="character-sprite" alt="Darrkito">
+                    <div class="hp-bar">
+                        <div class="hp-fill" id="darrkitoHp"></div>
+                        <div class="hp-text" id="darrkitoHpText">80/80</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="actionMenu">
+                <button class="action-btn" onclick="performAction('attack')">⚔️ ATACAR</button>
+                <button class="action-btn" onclick="performAction('special')">✨ ESPECIAL</button>
+                <button class="action-btn" onclick="performAction('heal')">❤️ CURAR</button>
+            </div>
+            
+            <div id="messageBox"></div>
+        </div>
+        
+        <div id="victoryScreen">
+            <h2 class="result-title victory-title">¡VICTORIA!</h2>
+            <p style="color: #cdaa3d; margin-bottom: 20px;">¡Has derrotado al Burrito Gigante!</p>
+            <p style="color: #ebd671; font-size: 10px; margin-bottom: 20px;">+100 $LATAM tokens ganados!</p>
+            <button class="startBtn" onclick="location.reload()">JUGAR DE NUEVO</button>
+        </div>
+        
+        <div id="defeatScreen">
+            <h2 class="result-title defeat-title">DERROTA</h2>
+            <p style="color: #cdaa3d; margin-bottom: 20px;">El Burrito Gigante fue muy fuerte...</p>
+            <button class="startBtn" onclick="location.reload()">INTENTAR DE NUEVO</button>
+        </div>
+    </div>
+    
+    <script>
+        // Preload de imágenes
+        window.addEventListener('load', function() {
+            let loadedImages = 0;
+            const totalImages = 3;
+            const imageUrls = ['doggy.png', 'burrito.png', 'darrkito.png'];
+            
+            function updateLoadingBar() {
+                loadedImages++;
+                const percent = (loadedImages / totalImages) * 100;
+                document.getElementById('loadingBar').style.width = percent + '%';
+                
+                if (loadedImages === totalImages) {
+                    setTimeout(() => {
+                        document.getElementById('loadingScreen').style.display = 'none';
+                    }, 500);
+                }
+            }
+            
+            imageUrls.forEach(url => {
+                const img = new Image();
+                img.onload = updateLoadingBar;
+                img.onerror = updateLoadingBar; // Continuar aunque falle
+                img.src = url;
+            });
+        });
+        
+        const characters = {
+            doggy: {
+                name: 'Doggy',
+                hp: 100,
+                maxHp: 100,
+                attack: 25,
+                special: 40,
+                healPower: 30,
+                speed: 3
+            },
+            burrito: {
+                name: 'Burrito',
+                hp: 150,
+                maxHp: 150,
+                attack: 20,
+                special: 35,
+                healPower: 25,
+                speed: 1
+            },
+            darrkito: {
+                name: 'Darrkito',
+                hp: 80,
+                maxHp: 80,
+                attack: 35,
+                special: 60,
+                healPower: 20,
+                speed: 2
+            }
+        };
+        
+        const enemy = {
+            name: 'Burrito Gigante',
+            hp: 500,
+            maxHp: 500,
+            attack: 30
+        };
+        
+        let currentCharacter = null;
+        let turnOrder = [];
+        let currentTurnIndex = 0;
+        let gameActive = false;
+        
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('battleScreen').style.display = 'block';
+            gameActive = true;
+            
+            turnOrder = Object.keys(characters).sort((a, b) => 
+                characters[b].speed - characters[a].speed
+            );
+            
+            updateAllHpBars();
+            nextTurn();
+        }
+        
+        function nextTurn() {
+            if (!gameActive) return;
+            
+            const alivePlayers = turnOrder.filter(char => characters[char].hp > 0);
+            
+            if (alivePlayers.length === 0) {
+                endGame(false);
+                return;
+            }
+            
+            if (enemy.hp <= 0) {
+                endGame(true);
+                return;
+            }
+            
+            currentCharacter = alivePlayers[currentTurnIndex % alivePlayers.length];
+            currentTurnIndex++;
+            
+            document.querySelectorAll('.character').forEach(char => {
+                char.classList.remove('selected');
+            });
+            
+            document.getElementById(currentCharacter).classList.add('selected');
+            
+            showMessage(`Turno de ${characters[currentCharacter].name}`);
+            document.getElementById('actionMenu').style.display = 'block';
+        }
+        
+        function selectCharacter(charId) {
+            if (!gameActive) return;
+            if (characters[charId].hp <= 0) return;
+            if (charId !== currentCharacter) return;
+        }
+        
+        function performAction(action) {
+            if (!gameActive) return;
+            
+            document.getElementById('actionMenu').style.display = 'none';
+            const char = characters[currentCharacter];
+            
+            switch(action) {
+                case 'attack':
+                    const damage = char.attack + Math.floor(Math.random() * 10);
+                    enemy.hp = Math.max(0, enemy.hp - damage);
+                    
+                    document.getElementById('enemy').classList.add('shake');
+                    setTimeout(() => {
+                        document.getElementById('enemy').classList.remove('shake');
+                    }, 500);
+                    
+                    showDamage('enemy', damage);
+                    showMessage(`${char.name} atacó por ${damage} de daño!`);
+                    break;
+                    
+                case 'special':
+                    const specialDamage = char.special + Math.floor(Math.random() * 15);
+                    enemy.hp = Math.max(0, enemy.hp - specialDamage);
+                    
+                    document.getElementById('enemy').classList.add('shake');
+                    setTimeout(() => {
+                        document.getElementById('enemy').classList.remove('shake');
+                    }, 500);
+                    
+                    showDamage('enemy', specialDamage);
+                    showMessage(`${char.name} usó ataque especial! ${specialDamage} de daño!`);
+                    break;
+                    
+                case 'heal':
+                    const healAmount = char.healPower;
+                    
+                    turnOrder.forEach(charId => {
+                        if (characters[charId].hp > 0) {
+                            const healed = Math.min(healAmount, 
+                                characters[charId].maxHp - characters[charId].hp);
+                            characters[charId].hp += healed;
+                            
+                            if (healed > 0) {
+                                showDamage(charId, healed, true);
+                            }
+                        }
+                    });
+                    
+                    showMessage(`${char.name} curó al equipo por ${healAmount} HP!`);
+                    break;
+            }
+            
+            updateAllHpBars();
+            
+            setTimeout(() => {
+                if (enemy.hp > 0) {
+                    enemyAttack();
+                } else {
+                    endGame(true);
+                }
+            }, 2000);
+        }
+        
+        function enemyAttack() {
+            if (!gameActive) return;
+            
+            const alivePlayers = turnOrder.filter(char => characters[char].hp > 0);
+            
+            if (alivePlayers.length === 0) {
+                endGame(false);
+                return;
+            }
+            
+            const target = alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
+            const damage = enemy.attack + Math.floor(Math.random() * 15);
+            
+            characters[target].hp = Math.max(0, characters[target].hp - damage);
+            
+            document.getElementById(target).classList.add('shake');
+            setTimeout(() => {
+                document.getElementById(target).classList.remove('shake');
+            }, 500);
+            
+            showDamage(target, damage);
+            showMessage(`Burrito Gigante atacó a ${characters[target].name} por ${damage} de daño!`);
+            
+            if (characters[target].hp <= 0) {
+                document.getElementById(target).classList.add('dead');
+            }
+            
+            updateAllHpBars();
+            
+            setTimeout(() => {
+                nextTurn();
+            }, 2000);
+        }
+        
+        function showDamage(targetId, amount, isHeal = false) {
+            const target = document.getElementById(targetId === 'enemy' ? 'enemy' : targetId);
+            const damageText = document.createElement('div');
+            damageText.className = isHeal ? 'damage-text heal-text' : 'damage-text';
+            damageText.textContent = isHeal ? `+${amount}` : `-${amount}`;
+            damageText.style.left = '50%';
+            damageText.style.top = '50%';
+            damageText.style.transform = 'translate(-50%, -50%)';
+            
+            target.appendChild(damageText);
+            
+            setTimeout(() => {
+                damageText.remove();
+            }, 1000);
+        }
+        
+        function updateAllHpBars() {
+            Object.keys(characters).forEach(charId => {
+                const char = characters[charId];
+                const hpPercent = (char.hp / char.maxHp) * 100;
+                document.getElementById(`${charId}Hp`).style.width = `${hpPercent}%`;
+                document.getElementById(`${charId}HpText`).textContent = 
+                    `${char.hp}/${char.maxHp}`;
+                
+                if (hpPercent > 50) {
+                    document.getElementById(`${charId}Hp`).style.background = 
+                        'linear-gradient(90deg, #00ff00, #00aa00)';
+                } else if (hpPercent > 25) {
+                    document.getElementById(`${charId}Hp`).style.background = 
+                        'linear-gradient(90deg, #ffff00, #aaaa00)';
+                } else {
+                    document.getElementById(`${charId}Hp`).style.background = 
+                        'linear-gradient(90deg, #ff0000, #aa0000)';
+                }
+            });
+            
+            const enemyHpPercent = (enemy.hp / enemy.maxHp) * 100;
+            document.getElementById('enemyHp').style.width = `${enemyHpPercent}%`;
+            document.getElementById('enemyHpText').textContent = 
+                `${enemy.hp}/${enemy.maxHp}`;
+            
+            if (enemyHpPercent > 50) {
+                document.getElementById('enemyHp').style.background = 
+                    'linear-gradient(90deg, #00ff00, #00aa00)';
+            } else if (enemyHpPercent > 25) {
+                document.getElementById('enemyHp').style.background = 
+                    'linear-gradient(90deg, #ffff00, #aaaa00)';
+            } else {
+                document.getElementById('enemyHp').style.background = 
+                    'linear-gradient(90deg, #ff0000, #aa0000)';
+            }
+        }
+        
+        function showMessage(text) {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = text;
+            messageBox.style.display = 'block';
+            
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, 2000);
+        }
+        
+        function endGame(victory) {
+            gameActive = false;
+            
+            setTimeout(() => {
+                if (victory) {
+                    document.getElementById('victoryScreen').style.display = 'block';
+                } else {
+                    document.getElementById('defeatScreen').style.display = 'block';
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
